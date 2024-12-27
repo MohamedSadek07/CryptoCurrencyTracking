@@ -16,15 +16,16 @@ protocol NetworkRequest {
 }
 
 extension NetworkRequest {
-    private var baseHeaders: HTTPHeaders {
+    var baseHeaders: HTTPHeaders {
         let headers = [
             "Content-Type": "application/json",
             "Accept": "application/json",
+            "x_cg_pro_api_key": "CG-DoqeVumZQdACfYVBKk5qVPjD" // Access Token
         ]
         return headers
     }
 
-    private func addQueryItems(queryParams: [String: Any]) -> [URLQueryItem] {
+     func addQueryItems(queryParams: [String: Any]) -> [URLQueryItem] {
         return queryParams.map { key, value in
             if let arrayValue = value as? [Any] {
                 // If the value is an array, format it as a comma-separated string

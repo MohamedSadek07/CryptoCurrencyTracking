@@ -11,7 +11,7 @@ enum NetworkError: Error {
     case normalError(Error)
     case notValidURL
     case noInternetConnection
-    case unAuthorithed
+    case unAuthorithed(UnauthorizedNetworkErrorResponse)
     case requestFailed
     case internalError(NetworkErrorResponse)
     case emptyErrorWithStatusCode(String)
