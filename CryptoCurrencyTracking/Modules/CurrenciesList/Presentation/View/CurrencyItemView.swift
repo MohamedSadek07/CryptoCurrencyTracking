@@ -9,7 +9,9 @@ import SwiftUI
 
 struct CurrencyItemView: View {
     // MARK: Variables
-    let currency: CurrencyModelItem
+    var currency: CurrencyModelItem
+    var favoriteAction: (_ isFavorite: Bool, _ item: CurrencyModelItem) -> Void
+    var isFavoriteListPresented: Bool
     // MARK: Body
     var body: some View {
         HStack(spacing: 16) {
@@ -28,39 +30,51 @@ struct CurrencyItemView: View {
                         ProgressView()
                     )
             }
-            
+
             // Currency Details
             VStack(alignment: .leading, spacing: 4) {
                 Text(currency.name)
                     .font(.headline)
                     .foregroundColor(.primary)
-                
+
                 Text(currency.symbol)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
-            
             Spacer()
-            
-            // Current Price
-            if currency.currentPrice != 0.0 {
-                Text("$\(currency.currentPrice, specifier: "%.2f")")
-                    .font(.headline)
-                    .foregroundColor(.green)
+
+            VStack(alignment: .trailing) {
+                if !isFavoriteListPresented {
+                    // Favorite Button
+                    Button(action: {
+                        toggleFavorite()
+                    }) {
+                        Image(systemName: currency.isFavorite ? "heart.fill" : "heart")
+                            .foregroundColor(currency.isFavorite ? .red : .gray)
+                    }
+                }
+                // Current Price
+                if currency.currentPrice != 0.0 {
+                    Text("$\(currency.currentPrice, specifier: "%.2f")")
+                        .font(.headline)
+                        .foregroundColor(.green)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .padding()
         .background(Color(.systemGray6))
         .cornerRadius(10)
         .shadow(radius: 2)
     }
-}
 
-
-#Preview {
-    CurrencyItemView(currency: CurrencyModelItem(id: "",
-                                                 name: "",
-                                                 symbol: "",
-                                                 image: "",
-                                                 currentPrice: 0.0))
+    private func toggleFavorite() {
+        if currency.isFavorite {
+            // remove from favorites
+            favoriteAction(false, currency)
+        } else {
+            // add to favorites
+            favoriteAction(true, currency)
+        }
+    }
 }

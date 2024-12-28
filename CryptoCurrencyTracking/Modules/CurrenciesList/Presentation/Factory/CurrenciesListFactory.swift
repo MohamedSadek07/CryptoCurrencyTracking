@@ -10,7 +10,9 @@ final class CurrenciesListFactory {
 
     static func createModule() -> CurrenciesListView {
         let remoteRepo = CurrenciesListRemoteRepository()
-        let currenciesListUseCase = CurrenciesListUseCase(remoteCurrenciesListRepo: remoteRepo)
+        let localRepo = CurrenciesListLocalRepository()
+        let currenciesListUseCase = CurrenciesListUseCase(remoteCurrenciesListRepo: remoteRepo,
+                                                          localCurrenciesListRepo: localRepo)
         let viewModel = CurrenciesListViewModel(currenciesListUseCase: currenciesListUseCase)
         let view = CurrenciesListView(viewModel: viewModel)
         return view

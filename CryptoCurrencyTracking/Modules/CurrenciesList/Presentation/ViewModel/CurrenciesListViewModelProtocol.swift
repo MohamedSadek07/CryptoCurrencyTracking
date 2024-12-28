@@ -9,4 +9,7 @@ import Foundation
 
 protocol CurrenciesListViewModelProtocol {
     func getCurrenciesList()
+    func getSearchCurrenciesListResults()
+    func handleFavoriteAction(_ isFavorite: Bool, _ item: CurrencyModelItem)
+    func favoritesButtonTapped()
 }

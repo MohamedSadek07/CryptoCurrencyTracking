@@ -26,7 +26,7 @@ class CurrenciesListViewModel: ObservableObject {
     @Published var showAlert = false
     @Published var isLoading = false
     @Published var refreshTrigger = PassthroughSubject<Void, Never>()
-
+    @Published var isFavorited: Bool = false
     //MARK: - Init
     init(currenciesListUseCase: CurrenciesListUseCaseProtocol) {
         self.currenciesListUseCase = currenciesListUseCase
@@ -151,5 +151,29 @@ extension CurrenciesListViewModel: CurrenciesListViewModelProtocol {
                 self.returnedCurrencies = response
             })
             .store(in: &cancelable)
+    }
+
+    /// Handles the action of adding or removing a currency item from favorites
+    func handleFavoriteAction(_ isFavorite: Bool, _ item: CurrencyModelItem) {
+        if isFavorite {
+            currenciesListUseCase.addFavorite(item)
+        } else {
+            currenciesListUseCase.removeFavorite(item)
+        }
+
+        if let index = returnedCurrencies.firstIndex(where: { $0.id == item.id }) {
+            savedCurrenciesList[index].isFavorite.toggle()
+        }
+        self.returnedCurrencies = savedCurrenciesList
+    }
+
+    /// Toggles the favorites view when the favorites button is tapped.
+    func favoritesButtonTapped() {
+        isFavorited.toggle()
+        if isFavorited {
+            returnedCurrencies = currenciesListUseCase.getFavorites()
+        } else {
+            returnedCurrencies = savedCurrenciesList
+        }
     }
 }

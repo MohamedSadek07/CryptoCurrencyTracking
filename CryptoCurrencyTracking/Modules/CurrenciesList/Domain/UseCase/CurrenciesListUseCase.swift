@@ -9,17 +9,24 @@ import Foundation
 import Combine
 
 protocol CurrenciesListUseCaseProtocol: AnyObject {
+    /// Remote
     func fetchCurrenciesList(requestModel: CurrenciesListRequestModel) -> AnyPublisher< [CurrencyModelItem], NetworkError>
     func getSearchCurrenciesResults(requestModel: SearchListRequestModel) -> AnyPublisher<[CurrencyModelItem], NetworkError>
+    /// Local
+    func getFavorites() -> [CurrencyModelItem]
+    func addFavorite(_ item: CurrencyModelItem)
+    func removeFavorite(_ item: CurrencyModelItem)
 }
 
 class CurrenciesListUseCase: CurrenciesListUseCaseProtocol {
     //MARK: Variables
     private let remoteCurrenciesListRepo: CurrenciesListRemoteRepositoryProtocol
+    private let localCurrenciesListRepo: CurrenciesListLocalRepositoryProtocol
     private var cancelable: Set<AnyCancellable> = []
     //MARK: Init
-    init(remoteCurrenciesListRepo: CurrenciesListRemoteRepositoryProtocol) {
+    init(remoteCurrenciesListRepo: CurrenciesListRemoteRepositoryProtocol, localCurrenciesListRepo: CurrenciesListLocalRepositoryProtocol) {
         self.remoteCurrenciesListRepo = remoteCurrenciesListRepo
+        self.localCurrenciesListRepo = localCurrenciesListRepo
     }
     //MARK: Methods
     private func mapCurrencies(_ response: CurrenciesListResponseModel) -> [CurrencyModelItem] {
@@ -28,7 +35,8 @@ class CurrenciesListUseCase: CurrenciesListUseCaseProtocol {
                               name: currency.name ?? "",
                               symbol: currency.symbol ?? "",
                               image: currency.image ?? "",
-                              currentPrice: currency.currentPrice ?? 0.0
+                              currentPrice: currency.currentPrice ?? 0.0,
+                              isFavorite: localCurrenciesListRepo.isFavorite(currency.id ?? "")
             )
         }
     }
@@ -45,7 +53,7 @@ class CurrenciesListUseCase: CurrenciesListUseCaseProtocol {
     }
 }
 
-/// UseCase Extension
+/// Remote UseCase Extension
 extension CurrenciesListUseCase {
     func fetchCurrenciesList(requestModel: CurrenciesListRequestModel) -> AnyPublisher< [CurrencyModelItem], NetworkError> {
         return Future<[CurrencyModelItem], NetworkError> { [weak self] promise in
@@ -81,5 +89,21 @@ extension CurrenciesListUseCase {
                     }).store(in: &cancelable)
         }
         .eraseToAnyPublisher()
+    }
+}
+
+
+/// Local UseCase Extension
+extension CurrenciesListUseCase {
+    func getFavorites() -> [CurrencyModelItem] {
+        localCurrenciesListRepo.getFavorites()
+    }
+
+    func addFavorite(_ item: CurrencyModelItem) {
+        localCurrenciesListRepo.addFavorite(item)
+    }
+
+    func removeFavorite(_ item: CurrencyModelItem) {
+        localCurrenciesListRepo.removeFavorite(item)
     }
 }
