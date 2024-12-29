@@ -40,11 +40,6 @@
 			path = CryptoCurrencyTrackingTests;
 			sourceTree = "<group>";
 		};
-		3C11E4062D1C7CB600191D6D /* CryptoCurrencyTrackingUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = CryptoCurrencyTrackingUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,7 +72,6 @@
 			children = (
 				3C11E3EB2D1C7CB300191D6D /* CryptoCurrencyTracking */,
 				3C11E3FC2D1C7CB600191D6D /* CryptoCurrencyTrackingTests */,
-				3C11E4062D1C7CB600191D6D /* CryptoCurrencyTrackingUITests */,
 				3C11E3EA2D1C7CB300191D6D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -152,9 +146,6 @@
 			);
 			dependencies = (
 				3C11E4052D1C7CB600191D6D /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				3C11E4062D1C7CB600191D6D /* CryptoCurrencyTrackingUITests */,
 			);
 			name = CryptoCurrencyTrackingUITests;
 			packageProductDependencies = (

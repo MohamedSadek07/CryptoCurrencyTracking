@@ -17,7 +17,7 @@ class CurrenciesListViewModel: ObservableObject {
     private var cancelable: Set<AnyCancellable> = []
     private var shouldAutoRefresh = true
     private var isSearching = false
-    private var savedCurrenciesList: [CurrencyModelItem] = []
+    var savedCurrenciesList: [CurrencyModelItem] = []
     private var savedSearchCurrenciesList: [CurrencyModelItem] = []
     var title = "Currencies"
     var alertTitle = ""
@@ -40,7 +40,7 @@ class CurrenciesListViewModel: ObservableObject {
 
     //MARK: - Methods
     /// Sets up the alert message and visibility for errors or success messages.
-    private func setupAlertAttributes(isError: Bool, alertMessage: String) {
+    func setupAlertAttributes(isError: Bool, alertMessage: String) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             showAlert = true

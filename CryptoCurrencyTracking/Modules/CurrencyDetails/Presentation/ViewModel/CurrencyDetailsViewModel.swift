@@ -27,7 +27,7 @@ class CurrencyDetailsViewModel: ObservableObject {
     }
     //MARK: - Methods
     /// Sets up the alert message and visibility for errors or success messages.
-    private func setupAlertAttributes(isError: Bool, alertMessage: String) {
+    func setupAlertAttributes(isError: Bool, alertMessage: String) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             showAlert = true
