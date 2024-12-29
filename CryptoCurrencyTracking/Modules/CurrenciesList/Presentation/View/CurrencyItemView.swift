@@ -54,11 +54,9 @@ struct CurrencyItemView: View {
                     }
                 }
                 // Current Price
-                if currency.currentPrice != 0.0 {
-                    Text("$\(currency.currentPrice, specifier: "%.2f")")
-                        .font(.headline)
-                        .foregroundColor(.green)
-                }
+                Text("$\(currency.currentPrice, specifier: "%.2f")")
+                    .font(.headline)
+                    .foregroundColor(.green)
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
         }

@@ -13,12 +13,15 @@ import Combine
 class CurrenciesListViewModel: ObservableObject {
     //MARK: Variables
     private let currenciesListUseCase: CurrenciesListUseCaseProtocol
+    private let coordinator: CurrenciesCoordinatorProtocol
     private var cancelable: Set<AnyCancellable> = []
     private var shouldAutoRefresh = true
+    private var isSearching = false
+    private var savedCurrenciesList: [CurrencyModelItem] = []
+    private var savedSearchCurrenciesList: [CurrencyModelItem] = []
     var title = "Currencies"
     var alertTitle = ""
     var alertMessage = ""
-    var savedCurrenciesList: [CurrencyModelItem] = []
     //MARK: Published Variables
     @Published var searchText: String = ""
     @Published var returnedCurrencies: [CurrencyModelItem] = []
@@ -28,11 +31,13 @@ class CurrenciesListViewModel: ObservableObject {
     @Published var refreshTrigger = PassthroughSubject<Void, Never>()
     @Published var isFavorited: Bool = false
     //MARK: - Init
-    init(currenciesListUseCase: CurrenciesListUseCaseProtocol) {
+    init(currenciesListUseCase: CurrenciesListUseCaseProtocol,
+         coordinator: CurrenciesCoordinatorProtocol) {
         self.currenciesListUseCase = currenciesListUseCase
-        setupAutoRefresh()
+        self.coordinator = coordinator
         setupSearchPublisher()
     }
+
     //MARK: - Methods
     /// Sets up the alert message and visibility for errors or success messages.
     private func setupAlertAttributes(isError: Bool, alertMessage: String) {
@@ -44,10 +49,10 @@ class CurrenciesListViewModel: ObservableObject {
         }
     }
 
-    /// Setup refreshTrigger listner in order to trigger currencies API calling with 30 seconds debounce
-    private func setupAutoRefresh() {
-        refreshTrigger
-            .debounce(for: .seconds(30), scheduler: RunLoop.main)
+    /// Setup Timer in order to handle autoRefresh every 30 seconds
+    func setupAutoRefresh() {
+        Timer.publish(every: 30, on: .main, in: .common)
+            .autoconnect()
             .sink { [weak self] _ in
                 guard let self, self.shouldAutoRefresh else { return }
                 getCurrenciesList()
@@ -63,26 +68,43 @@ class CurrenciesListViewModel: ObservableObject {
             .sink { [weak self] searchTerm in
                 guard let self = self else { return }
                 if searchTerm.isEmpty {
+                    isSearching = false
                     self.returnedCurrencies = self.savedCurrenciesList
                     startAutoRefresh()
                 } else {
+                    isSearching = true
                     stopAutoRefresh()
                     getSearchCurrenciesListResults()
                 }
             }
             .store(in: &cancelable)
     }
-
     /// Starts the auto-refresh mechanism by enabling it and sending a refresh trigger.
     private func startAutoRefresh() {
-         shouldAutoRefresh = true
-         refreshTrigger.send()
-     }
+        shouldAutoRefresh = true
+    }
 
     /// Stops the auto-refresh mechanism by disabling it.
     private func stopAutoRefresh() {
-         shouldAutoRefresh = false
-     }
+        shouldAutoRefresh = false
+    }
+    /// Switches on error type and report upon that type
+    private func errorReporting(error: NetworkError) {
+        switch error {
+        case let .internalError(errorResponse):
+            self.setupAlertAttributes(isError: true, alertMessage: errorResponse.error ?? "")
+        case .unAuthorithed:
+            self.setupAlertAttributes(isError: true, alertMessage: "Something went wrong while fetching currencies")
+        case .noInternetConnection:
+            self.setupAlertAttributes(isError: true, alertMessage: "There is no internet connection, please check your connection")
+        case let .fetchingError(errorResponse):
+            self.setupAlertAttributes(isError: true, alertMessage: errorResponse.status?.errorMessage ?? "")
+        case .emptyErrorWithStatusCode:
+            self.setupAlertAttributes(isError: true, alertMessage: "Server error")
+        default:
+            break
+        }
+    }
 }
 
 //MARK: - Extensions
@@ -100,23 +122,13 @@ extension CurrenciesListViewModel: CurrenciesListViewModelProtocol {
                 switch result {
                 case .finished:
                     break
-                case .failure(let err):
-                    switch err {
-                    case let .internalError(errorResponse):
-                        self.setupAlertAttributes(isError: true, alertMessage: errorResponse.error ?? "")
-                    case .unAuthorithed:
-                        self.setupAlertAttributes(isError: true, alertMessage: "Something went wrong while fetching currencies")
-                    case .noInternetConnection:
-                        self.setupAlertAttributes(isError: true, alertMessage: "There is no internet connection, please check your connection")
-                    default:
-                        break
-                    }
+                case .failure(let error):
+                    errorReporting(error: error)
                 }
             }, receiveValue: { [weak self] response in
                 guard let self else { return }
                 self.returnedCurrencies = response
                 self.savedCurrenciesList = response
-                startAutoRefresh()
             })
             .store(in: &cancelable)
     }
@@ -134,21 +146,13 @@ extension CurrenciesListViewModel: CurrenciesListViewModelProtocol {
                 switch result {
                 case .finished:
                     break
-                case .failure(let err):
-                    switch err {
-                    case let .internalError(errorResponse):
-                        self.setupAlertAttributes(isError: true, alertMessage: errorResponse.error ?? "")
-                    case .unAuthorithed:
-                        self.setupAlertAttributes(isError: true, alertMessage: "Something went wrong while fetching currencies")
-                    case .noInternetConnection:
-                        self.setupAlertAttributes(isError: true, alertMessage: "There is no internet connection, please check your connection")
-                    default:
-                        break
-                    }
+                case .failure(let error):
+                    errorReporting(error: error)
                 }
             }, receiveValue: { [weak self] response in
                 guard let self else { return }
                 self.returnedCurrencies = response
+                self.savedSearchCurrenciesList = response
             })
             .store(in: &cancelable)
     }
@@ -161,19 +165,45 @@ extension CurrenciesListViewModel: CurrenciesListViewModelProtocol {
             currenciesListUseCase.removeFavorite(item)
         }
 
-        if let index = returnedCurrencies.firstIndex(where: { $0.id == item.id }) {
-            savedCurrenciesList[index].isFavorite.toggle()
+        // Check isSearching to check whether to apply to searchResults or allResults
+        if isSearching {
+            // Updating Search List
+            if let index = savedSearchCurrenciesList.firstIndex(where: { $0.id == item.id }) {
+                savedSearchCurrenciesList[index].isFavorite.toggle()
+            }
+            self.returnedCurrencies = savedSearchCurrenciesList
+            // Updating Saved whole list
+            if let index = savedCurrenciesList.firstIndex(where: { $0.id == item.id }) {
+                savedCurrenciesList[index].isFavorite.toggle()
+            }
+        } else  {
+            if let index = savedCurrenciesList.firstIndex(where: { $0.id == item.id }) {
+                savedCurrenciesList[index].isFavorite.toggle()
+            }
+            self.returnedCurrencies = savedCurrenciesList
         }
-        self.returnedCurrencies = savedCurrenciesList
     }
 
     /// Toggles the favorites view when the favorites button is tapped.
     func favoritesButtonTapped() {
         isFavorited.toggle()
         if isFavorited {
+            stopAutoRefresh()
             returnedCurrencies = currenciesListUseCase.getFavorites()
         } else {
+            startAutoRefresh()
             returnedCurrencies = savedCurrenciesList
         }
+    }
+
+    /// Trigger navigation to currency details
+    func didSelectCurrency(with id: String) {
+        coordinator.push(page: .currencyDetail(currencyID: id))
+    }
+
+    /// StopAutoRefresh, reset refreshTrigger and remove all cancellables
+    func removeAllSubscribers() {
+        stopAutoRefresh()
+        cancelable.removeAll()
     }
 }

@@ -11,7 +11,6 @@ import Combine
 struct CurrenciesListView: View {
     // MARK: Variables
     @StateObject var viewModel: CurrenciesListViewModel
-
     // MARK: - Init
     init(viewModel: CurrenciesListViewModel) {
         self._viewModel = StateObject(wrappedValue: viewModel)
@@ -20,7 +19,7 @@ struct CurrenciesListView: View {
     var body: some View {
         NavigationView {
             // FavoritesButton and List of currencies with searchBar
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 10) {
                 favoritesButton
                 .padding(.horizontal, 14)
 
@@ -33,6 +32,10 @@ struct CurrenciesListView: View {
         .task {
             // Fetch data on view load
             viewModel.getCurrenciesList()
+            viewModel.setupAutoRefresh()
+        }
+        .onDisappear {
+            viewModel.removeAllSubscribers()
         }
         .overlay(alignment: .center) {
             if viewModel.isLoading {
@@ -69,26 +72,28 @@ struct CurrenciesListView: View {
     @ViewBuilder
     var currenciesList: some View {
         if !viewModel.returnedCurrencies.isEmpty {
-            List(viewModel.returnedCurrencies, id: \.self) { item in
-                CurrencyItemView(currency: item, favoriteAction: { isFavorite, item in
-                    viewModel.handleFavoriteAction(isFavorite, item)
-                }, isFavoriteListPresented: viewModel.isFavorited)
-                .listRowSeparator(.hidden)
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    ForEach(viewModel.returnedCurrencies, id: \.self) { item in
+                        Button(action: {
+                            viewModel.didSelectCurrency(with: item.id)
+                        }) {
+                            CurrencyItemView(currency: item, favoriteAction: { isFavorite, item in
+                                viewModel.handleFavoriteAction(isFavorite, item)
+                            }, isFavoriteListPresented: viewModel.isFavorited)
+                            .padding(.horizontal)
+                            .padding(.vertical, 6)
+                        }
+                    }
+                }
             }
-            .listStyle(.plain)
         } else {
-            Text("There is not any currency yet")
+            Text(viewModel.isFavorited ? "There is not any favorites" : "There is not any currency yet")
                 .font(.title3)
                 .fontWeight(.medium)
-                .padding(.horizontal, 50)
+                .padding(.horizontal, 60)
                 .padding(.top, 100)
             Spacer()
         }
-    }
-}
-
-struct CurrenciesList_Previews: PreviewProvider {
-    static var previews: some View {
-        CurrenciesListFactory.createModule()
     }
 }

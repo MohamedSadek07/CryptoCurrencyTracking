@@ -14,5 +14,6 @@ enum Constants {
   enum Endpoints {
     static let coinsList = "coins/markets"
     static let search = "search"
+    static let coinDetail = "coins"
     }
 }

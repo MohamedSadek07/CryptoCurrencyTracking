@@ -33,3 +33,20 @@ struct Status: Codable {
 struct NetworkErrorResponse: Codable {
     let error: String?
 }
+
+
+// MARK: - GeneralErrorResponse
+struct GeneralErrorResponse: Codable {
+    let status: GeneralStatus?
+}
+
+// MARK: Status
+struct GeneralStatus: Codable {
+    let errorCode: Int?
+    let errorMessage: String?
+
+    enum CodingKeys: String, CodingKey {
+        case errorCode = "error_code"
+        case errorMessage = "error_message"
+    }
+}

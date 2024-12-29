@@ -47,7 +47,8 @@ class CurrenciesListUseCase: CurrenciesListUseCaseProtocol {
                               name: currency.name ?? "",
                               symbol: currency.symbol ?? "",
                               image: currency.large ?? "",
-                              currentPrice: 0.0
+                              currentPrice: 0.0,
+                              isFavorite: localCurrenciesListRepo.isFavorite(currency.id ?? "")
             )
         } ?? []
     }

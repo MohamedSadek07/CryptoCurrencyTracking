@@ -46,16 +46,18 @@ final class NetworkAPIClient: NetworkAPIClientProtocol {
                     throw NetworkError.unAuthorithed(errorResponse)
                 } else if httpResponse.statusCode == 1009 || httpResponse.statusCode == 1020 {
                     throw NetworkError.noInternetConnection
+                } else if let errorResponse = try? JSONDecoder().decode(NetworkErrorResponse.self, from: result.data), let errorMessage = errorResponse.error  {
+                    Log.error("Internal error: ================ ")
+                    Log.error(errorMessage)
+                    throw NetworkError.internalError(errorResponse)
+                } else if let generalErrorResponse = try? JSONDecoder().decode(GeneralErrorResponse.self, from: result.data), let errorMessage = generalErrorResponse.status?.errorMessage  {
+                    Log.error("Internal error: ================ ")
+                    Log.error(errorMessage)
+                    throw NetworkError.fetchingError(generalErrorResponse)
                 } else {
-                    if let errorResponse = try? JSONDecoder().decode(NetworkErrorResponse.self, from: result.data) {
-                        Log.error("Internal error: ================ ")
-                        Log.error(errorResponse.error ?? "")
-                        throw NetworkError.internalError(errorResponse)
-                    } else {
-                        Log.error("Something went wrong error: ================ ")
-                        Log.error("with status code \(httpResponse.statusCode.description)")
-                        throw NetworkError.emptyErrorWithStatusCode(httpResponse.statusCode.description)
-                    }
+                    Log.error("Something went wrong error: ================ ")
+                    Log.error("with status code \(httpResponse.statusCode.description)")
+                    throw NetworkError.emptyErrorWithStatusCode(httpResponse.statusCode.description)
                 }
             }
             .receive(on: DispatchQueue.main)

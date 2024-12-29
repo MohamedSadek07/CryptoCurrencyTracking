@@ -11,7 +11,7 @@ import SwiftUI
 struct CryptoCurrencyTrackingApp: App {
     var body: some Scene {
         WindowGroup {
-            CurrenciesListFactory.createModule()
+            CurrenciesCoordinatorView()
         }
     }
 }
